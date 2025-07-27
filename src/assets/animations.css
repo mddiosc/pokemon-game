@@ -1,10 +1,128 @@
+/* ===========================================
+   POKEMON GAME ANIMATIONS - UI/UX IMPROVEMENTS
+   =========================================== */
+
+/* Basic Fade Animations */
 .fade-in {
-  animation: fadeIn 0.3s;
-  -webkit-animation: fadeIn 0.3s;
-  -moz-animation: fadeIn 0.3s;
-  -o-animation: fadeIn 0.3s;
-  -ms-animation: fadeIn 0.3s;
+  animation: fadeIn 0.5s ease-out;
 }
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.fade-in-down {
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.fade-in-scale {
+  animation: fadeInScale 0.5s ease-out;
+}
+
+/* Pokemon Reveal Animations */
+.bounce-in {
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.pokemon-reveal {
+  animation: pokemonReveal 1s ease-out;
+}
+
+.pokemon-silhouette-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pokemon-silhouette-hover:hover {
+  transform: scale(1.05) rotate(-2deg);
+  filter: brightness(0.1) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.4));
+}
+
+/* Button Animations */
+.pokemon-option-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+}
+
+.pokemon-option-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.pokemon-option-btn:active {
+  transform: translateY(0);
+  transition: all 0.1s;
+}
+
+.pokemon-option-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.pokemon-option-btn:hover::before {
+  left: 100%;
+}
+
+/* Success/Error States */
+.correct-answer {
+  animation: correctAnswer 0.6s ease-out;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.incorrect-answer {
+  animation: incorrectAnswer 0.6s ease-out;
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.disabled-option {
+  animation: disableOption 0.3s ease-out;
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+/* Sparkle Effects */
+.sparkle-effect {
+  animation: sparkleFloat 2s ease-in-out infinite;
+}
+
+.sparkle-burst {
+  animation: sparkleBurst 1.5s ease-out;
+}
+
+/* Loading Animations */
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.spin-slow {
+  animation: spinSlow 3s linear infinite;
+}
+
+/* Game State Animations */
+.game-start {
+  animation: gameStart 0.8s ease-out;
+}
+
+.score-update {
+  animation: scoreUpdate 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.level-up {
+  animation: levelUp 1s ease-out;
+}
+
+/* Keyframe Definitions */
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -14,38 +132,227 @@
   }
 }
 
-@-moz-keyframes fadeIn {
+@keyframes fadeInUp {
   0% {
     opacity: 0;
+    transform: translateY(30px);
   }
   100% {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@-webkit-keyframes fadeIn {
+@keyframes fadeInDown {
   0% {
     opacity: 0;
+    transform: translateY(-30px);
   }
   100% {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@-o-keyframes fadeIn {
+@keyframes fadeInScale {
   0% {
     opacity: 0;
+    transform: scale(0.8);
   }
   100% {
     opacity: 1;
+    transform: scale(1);
   }
 }
 
-@-ms-keyframes fadeIn {
+@keyframes bounceIn {
   0% {
     opacity: 0;
+    transform: scale(0.3) rotate(-10deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(5deg);
+  }
+  70% {
+    transform: scale(0.95) rotate(-2deg);
   }
   100% {
     opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes pokemonReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotateY(180deg);
+    filter: brightness(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2) rotateY(90deg);
+    filter: brightness(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+    filter: brightness(1);
+  }
+}
+
+@keyframes correctAnswer {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+  }
+  25% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  }
+}
+
+@keyframes incorrectAnswer {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes disableOption {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes sparkleFloat {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(0px) scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1) rotate(180deg);
+  }
+}
+
+@keyframes sparkleBurst {
+  0% {
+    opacity: 1;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2) rotate(360deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes spinSlow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gameStart {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotateY(-90deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1) rotateY(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+}
+
+@keyframes scoreUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+    color: #10b981;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes levelUp {
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    transform: scale(1.1) rotate(5deg);
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(-5deg);
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(3deg);
+    filter: hue-rotate(270deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* Responsive Animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
