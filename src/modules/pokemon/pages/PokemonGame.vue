@@ -80,22 +80,36 @@
 
       <!-- Enhanced play again button -->
       <div class="h-20 mb-8 fade-in-scale">
-        <button
-          v-if="gameStatus !== GameStatus.Playing"
-          @click="getNextRound()"
-          class="play-again-btn group relative bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white px-10 py-4 rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 font-bold text-xl border-2 border-white/30 backdrop-blur-sm overflow-hidden"
-        >
-          <!-- Button shimmer effect -->
-          <div
-            class="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
-          ></div>
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+          <button
+            v-if="gameStatus !== GameStatus.Playing"
+            @click="getNextRound()"
+            class="play-again-btn group relative bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white px-10 py-4 rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 font-bold text-xl border-2 border-white/30 backdrop-blur-sm overflow-hidden"
+          >
+            <!-- Button shimmer effect -->
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"
+            ></div>
 
-          <span class="relative z-10 flex items-center space-x-2">
-            <span>🎮</span>
-            <span>¡Jugar de nuevo!</span>
-            <span class="group-hover:animate-bounce">🚀</span>
-          </span>
-        </button>
+            <span class="relative z-10 flex items-center space-x-2">
+              <span>🎮</span>
+              <span>¡Jugar de nuevo!</span>
+              <span class="group-hover:animate-bounce">🚀</span>
+            </span>
+          </button>
+
+          <!-- Reset Stats Button -->
+          <button
+            v-if="gameStatus !== GameStatus.Playing && totalQuestions > 0"
+            @click="resetStats()"
+            class="reset-btn group relative bg-gradient-to-r from-slate-500 to-slate-600 text-white px-6 py-3 rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 font-semibold text-sm border-2 border-white/20 backdrop-blur-sm overflow-hidden"
+          >
+            <span class="relative z-10 flex items-center space-x-2">
+              <span>🔄</span>
+              <span>Reiniciar Stats</span>
+            </span>
+          </button>
+        </div>
       </div>
 
       <!-- Pokemon Picture with container animation -->
@@ -137,6 +151,22 @@
           </span>
         </div>
       </div>
+
+      <!-- Game Stats Component -->
+      <div class="w-full max-w-4xl mb-6 fade-in-down">
+        <GameStats
+          :score="score"
+          :streak="streak"
+          :total-questions="totalQuestions"
+          :correct-answers="correctAnswers"
+          :best-streak="bestStreak"
+          :round="round"
+          :accuracy="accuracy"
+          :current-level="currentLevel"
+          :points-to-next-level="pointsToNextLevel"
+          :progress-percentage="progressPercentage"
+        />
+      </div>
     </div>
   </section>
 </template>
@@ -144,9 +174,27 @@
 <script setup lang="ts">
 import PokemonPicture from '@pokemon/components/PokemonPicture.vue'
 import PokemonOptions from '@pokemon/components/PokemonOptions.vue'
+import GameStats from '@pokemon/components/GameStats.vue'
 import { usePokemonGame } from '../composables/usePokemonGame'
 import { GameStatus } from '../interfaces'
 
-const { isLoading, randomPokemon, gameStatus, pokemonOptions, checkAnswer, getNextRound } =
-  usePokemonGame()
+const {
+  isLoading,
+  randomPokemon,
+  gameStatus,
+  pokemonOptions,
+  checkAnswer,
+  getNextRound,
+  resetStats,
+  score,
+  streak,
+  totalQuestions,
+  correctAnswers,
+  bestStreak,
+  round,
+  accuracy,
+  currentLevel,
+  pointsToNextLevel,
+  progressPercentage,
+} = usePokemonGame()
 </script>
