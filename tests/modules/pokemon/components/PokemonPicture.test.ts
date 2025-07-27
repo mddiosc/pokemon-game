@@ -82,7 +82,7 @@ describe('PokemonPicture', () => {
     })
 
     const img = wrapper.find('img')
-    expect(img.attributes('alt')).toBe('')
+    expect(img.attributes('alt')).toBe('Silueta de Pokemon')
   })
 
   it('should update image URL when pokemonId prop changes', async () => {

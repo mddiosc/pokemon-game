@@ -43,19 +43,39 @@ vi.mock('@/modules/pokemon/components/PokemonOptions.vue', () => ({
 }))
 
 describe('PokemonGame', () => {
+  const mockPokemonGameReturn = {
+    isLoading: ref(false),
+    randomPokemon: ref({ id: 25, name: 'pikachu' }),
+    gameStatus: ref(GameStatus.Playing),
+    pokemonOptions: ref([
+      { id: 25, name: 'pikachu' },
+      { id: 1, name: 'bulbasaur' },
+    ]),
+    checkAnswer: vi.fn(),
+    getNextRound: vi.fn(),
+    // Scoring system props
+    score: ref(0),
+    streak: ref(0),
+    bestStreak: ref(0),
+    totalQuestions: ref(0),
+    correctAnswers: ref(0),
+    round: ref(1),
+    accuracy: ref(0),
+    currentLevel: ref(1),
+    pointsToNextLevel: ref(100),
+    progressPercentage: ref(0),
+  }
+
   it('should render loading state when isLoading is true', () => {
     mockUsePokemonGame.mockReturnValue({
+      ...mockPokemonGameReturn,
       isLoading: ref(true),
       randomPokemon: ref(null),
-      gameStatus: ref(GameStatus.Playing),
-      pokemonOptions: ref([]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
 
-    expect(wrapper.find('h1').text()).toBe('Espere por favor')
+    expect(wrapper.find('h1').text()).toBe('🔍 Pokemon Game')
     expect(wrapper.find('h3').text()).toBe('Cargando Pokémons...')
     expect(wrapper.find('[data-testid="pokemon-picture"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="pokemon-options"]').exists()).toBe(false)
@@ -63,38 +83,25 @@ describe('PokemonGame', () => {
 
   it('should render loading state when randomPokemon is null', () => {
     mockUsePokemonGame.mockReturnValue({
+      ...mockPokemonGameReturn,
       isLoading: ref(false),
       randomPokemon: ref(null),
-      gameStatus: ref(GameStatus.Playing),
-      pokemonOptions: ref([{ id: 1, name: 'pikachu' }]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
 
-    expect(wrapper.find('h1').text()).toBe('Espere por favor')
+    expect(wrapper.find('h1').text()).toBe('🔍 Pokemon Game')
     expect(wrapper.find('h3').text()).toBe('Cargando Pokémons...')
     expect(wrapper.find('[data-testid="pokemon-picture"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="pokemon-options"]').exists()).toBe(false)
   })
 
   it('should render game content when loaded and playing', () => {
-    mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
-      gameStatus: ref(GameStatus.Playing),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
-    })
+    mockUsePokemonGame.mockReturnValue(mockPokemonGameReturn)
 
     const wrapper = mount(PokemonGame)
 
-    expect(wrapper.find('h1').text()).toBe('¿Quien es este Pokémon?')
+    expect(wrapper.find('h1').text()).toBe('🎯 ¿Quién es este Pokémon?')
     expect(wrapper.find('[data-testid="pokemon-picture"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="pokemon-options"]').exists()).toBe(true)
     expect(wrapper.find('button').text()).not.toBe('Jugar de nuevo') // No "Jugar de nuevo" button when playing
@@ -104,22 +111,16 @@ describe('PokemonGame', () => {
     const mockGetNextRound = vi.fn()
 
     mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
+      ...mockPokemonGameReturn,
       gameStatus: ref(GameStatus.Won),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
-      checkAnswer: vi.fn(),
       getNextRound: mockGetNextRound,
     })
 
     const wrapper = mount(PokemonGame)
 
-    expect(wrapper.find('h1').text()).toBe('¿Quien es este Pokémon?')
+    expect(wrapper.find('h1').text()).toBe('🎯 ¿Quién es este Pokémon?')
     expect(wrapper.find('button').exists()).toBe(true)
-    expect(wrapper.find('button').text()).toBe('Jugar de nuevo')
+    expect(wrapper.find('button').text()).toBe('🎮¡Jugar de nuevo!🚀')
 
     wrapper.find('button').trigger('click')
     expect(mockGetNextRound).toHaveBeenCalledOnce()
@@ -129,39 +130,23 @@ describe('PokemonGame', () => {
     const mockGetNextRound = vi.fn()
 
     mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
+      ...mockPokemonGameReturn,
       gameStatus: ref(GameStatus.Lost),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
-      checkAnswer: vi.fn(),
       getNextRound: mockGetNextRound,
     })
 
     const wrapper = mount(PokemonGame)
 
-    expect(wrapper.find('h1').text()).toBe('¿Quien es este Pokémon?')
+    expect(wrapper.find('h1').text()).toBe('🎯 ¿Quién es este Pokémon?')
     expect(wrapper.find('button').exists()).toBe(true)
-    expect(wrapper.find('button').text()).toBe('Jugar de nuevo')
+    expect(wrapper.find('button').text()).toBe('🎮¡Jugar de nuevo!🚀')
 
     wrapper.find('button').trigger('click')
     expect(mockGetNextRound).toHaveBeenCalledOnce()
   })
 
   it('should pass correct props to PokemonPicture when playing', () => {
-    mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
-      gameStatus: ref(GameStatus.Playing),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
-    })
+    mockUsePokemonGame.mockReturnValue(mockPokemonGameReturn)
 
     const wrapper = mount(PokemonGame)
 
@@ -170,15 +155,8 @@ describe('PokemonGame', () => {
 
   it('should pass correct props to PokemonPicture when game is won', () => {
     mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
+      ...mockPokemonGameReturn,
       gameStatus: ref(GameStatus.Won),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
@@ -188,16 +166,12 @@ describe('PokemonGame', () => {
 
   it('should pass correct props to PokemonOptions when playing', () => {
     mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
-      gameStatus: ref(GameStatus.Playing),
+      ...mockPokemonGameReturn,
       pokemonOptions: ref([
         { id: 25, name: 'pikachu' },
         { id: 1, name: 'bulbasaur' },
         { id: 4, name: 'charmander' },
       ]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
@@ -209,15 +183,8 @@ describe('PokemonGame', () => {
     const mockCheckAnswer = vi.fn()
 
     mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
-      gameStatus: ref(GameStatus.Playing),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
+      ...mockPokemonGameReturn,
       checkAnswer: mockCheckAnswer,
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
@@ -230,12 +197,9 @@ describe('PokemonGame', () => {
 
   it('should apply correct CSS classes to loading section', () => {
     mockUsePokemonGame.mockReturnValue({
+      ...mockPokemonGameReturn,
       isLoading: ref(true),
       randomPokemon: ref(null),
-      gameStatus: ref(GameStatus.Playing),
-      pokemonOptions: ref([]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
@@ -249,35 +213,26 @@ describe('PokemonGame', () => {
     expect(loadingSection.classes()).toContain('w-screen')
 
     const h1 = wrapper.find('h1')
-    expect(h1.classes()).toContain('text-3xl')
+    expect(h1.classes()).toContain('text-5xl')
 
     const h3 = wrapper.find('h3')
-    expect(h3.classes()).toContain('animate-pulse')
+    expect(h3.classes()).toContain('text-2xl')
+
+    // The animate-pulse class is on the span inside h3
+    const animatedSpan = wrapper.find('h3 span.animate-pulse')
+    expect(animatedSpan.exists()).toBe(true)
   })
 
   it('should apply correct CSS classes to "Jugar de nuevo" button', () => {
     mockUsePokemonGame.mockReturnValue({
-      isLoading: ref(false),
-      randomPokemon: ref({ id: 25, name: 'pikachu' }),
+      ...mockPokemonGameReturn,
       gameStatus: ref(GameStatus.Won),
-      pokemonOptions: ref([
-        { id: 25, name: 'pikachu' },
-        { id: 1, name: 'bulbasaur' },
-      ]),
-      checkAnswer: vi.fn(),
-      getNextRound: vi.fn(),
     })
 
     const wrapper = mount(PokemonGame)
     const button = wrapper.find('button')
 
-    expect(button.classes()).toContain('mb-5')
-    expect(button.classes()).toContain('bg-blue-500')
-    expect(button.classes()).toContain('text-white')
-    expect(button.classes()).toContain('p-3')
-    expect(button.classes()).toContain('rounded-lg')
-    expect(button.classes()).toContain('shadow-md')
-    expect(button.classes()).toContain('hover:bg-blue-600')
-    expect(button.classes()).toContain('transition-all')
+    expect(button.classes()).toContain('play-again-btn')
+    expect(button.classes()).toContain('group')
   })
 })

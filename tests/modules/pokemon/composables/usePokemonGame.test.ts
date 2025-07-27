@@ -1,52 +1,36 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { usePokemonGame } from '@/modules/pokemon/composables/usePokemonGame'
 import { GameStatus } from '@/modules/pokemon/interfaces'
-import type { Pokemon } from '@/modules/pokemon/interfaces'
-import { flushPromises } from '@vue/test-utils'
-import { nextTick, createApp } from 'vue'
 
-// Mock dependencies
+// Mock simple de la API - datos mínimos para evitar memory leaks
+const mockApiResponse = {
+  data: {
+    results: [
+      { name: 'bulbasaur', url: 'https://pokeapi.co/api/v2/pokemon/1/' },
+      { name: 'ivysaur', url: 'https://pokeapi.co/api/v2/pokemon/2/' },
+      { name: 'venusaur', url: 'https://pokeapi.co/api/v2/pokemon/3/' },
+      { name: 'charmander', url: 'https://pokeapi.co/api/v2/pokemon/4/' },
+    ],
+  },
+}
+
+const mockPokemonApi = vi.fn(() => Promise.resolve(mockApiResponse))
+
 vi.mock('@/modules/pokemon/api/pokemonApi', () => ({
   pokemonApi: {
-    get: vi.fn(() =>
-      Promise.resolve({
-        data: {
-          count: 151,
-          next: 'https://pokeapi.co/api/v2/pokemon/?offset=151&limit=151',
-          previous: null,
-          results: [
-            { name: 'bulbasaur', url: 'https://pokeapi.co/api/v2/pokemon/1/' },
-            { name: 'ivysaur', url: 'https://pokeapi.co/api/v2/pokemon/2/' },
-            { name: 'venusaur', url: 'https://pokeapi.co/api/v2/pokemon/3/' },
-            { name: 'charmander', url: 'https://pokeapi.co/api/v2/pokemon/4/' },
-            { name: 'charmeleon', url: 'https://pokeapi.co/api/v2/pokemon/5/' },
-          ],
-        },
-      }),
-    ),
+    get: mockPokemonApi,
   },
 }))
 
+// Mock canvas-confetti simple
+const mockConfetti = vi.fn()
 vi.mock('canvas-confetti', () => ({
-  default: vi.fn(),
+  default: mockConfetti,
 }))
-
-// Helper function to create Vue app context for composables
-function withSetup<T>(composable: () => T): [T, ReturnType<typeof createApp>] {
-  let result: T
-  const app = createApp({
-    setup() {
-      result = composable()
-      return {}
-    },
-  })
-  app.mount(document.createElement('div'))
-  return [result!, app]
-}
-
 describe('usePokemonGame', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
+    mockPokemonApi.mockResolvedValue(mockApiResponse)
   })
 
   afterEach(() => {
@@ -54,168 +38,182 @@ describe('usePokemonGame', () => {
   })
 
   it('should initialize with correct default values', () => {
-    const [result] = withSetup(() => usePokemonGame())
+    const game = usePokemonGame()
 
-    expect(result.gameStatus.value).toBe(GameStatus.Playing)
-    expect(result.isLoading.value).toBe(true) // Initially loading
-    expect(result.pokemonOptions.value).toEqual([])
+    // Test initial state
+    expect(game.gameStatus.value).toBe(GameStatus.Playing)
+    expect(game.isLoading.value).toBe(true)
+    expect(game.pokemonOptions.value).toEqual([])
+
+    // Test scoring system initial values
+    expect(game.score.value).toBe(0)
+    expect(game.streak.value).toBe(0)
+    expect(game.bestStreak.value).toBe(0)
+    expect(game.totalQuestions.value).toBe(0)
+    expect(game.correctAnswers.value).toBe(0)
+    expect(game.round.value).toBe(1)
+    expect(game.accuracy.value).toBe(0)
+    expect(game.currentLevel.value).toBe(1)
+    expect(game.pointsToNextLevel.value).toBe(100)
+    expect(game.progressPercentage.value).toBe(0)
   })
 
-  it('should process pokemon data correctly', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should load pokemon data correctly', async () => {
+    const game = usePokemonGame()
 
-    // Wait for the API call and data processing
-    await flushPromises()
-    await nextTick()
+    // Wait for API call to complete
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(result.isLoading.value).toBe(false)
-    expect(result.pokemonOptions.value).toHaveLength(4) // Default howMany is 4
-
-    // Check that pokemons have correct structure
-    result.pokemonOptions.value.forEach((pokemon: Pokemon) => {
-      expect(pokemon).toHaveProperty('id')
-      expect(pokemon).toHaveProperty('name')
-      expect(typeof pokemon.id).toBe('number')
-      expect(typeof pokemon.name).toBe('string')
-    })
+    expect(mockPokemonApi).toHaveBeenCalledWith('/?limit=151')
+    expect(game.isLoading.value).toBe(false)
+    expect(game.pokemonOptions.value).toHaveLength(4)
+    expect(game.randomPokemon.value).toBeDefined()
   })
 
-  it('should return a random pokemon from options', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should handle correct answer', async () => {
+    const game = usePokemonGame()
 
-    await flushPromises()
-    await nextTick()
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(result.randomPokemon.value).toBeDefined()
-    expect(result.pokemonOptions.value).toContain(result.randomPokemon.value)
+    const correctId = game.randomPokemon.value.id
+    game.checkAnswer(correctId)
+
+    expect(game.gameStatus.value).toBe(GameStatus.Won)
+    expect(game.score.value).toBe(10) // Base score
+    expect(game.streak.value).toBe(1)
+    expect(game.correctAnswers.value).toBe(1)
+    expect(game.totalQuestions.value).toBe(1)
+    expect(game.accuracy.value).toBe(100)
+    expect(mockConfetti).toHaveBeenCalled()
   })
 
-  it('should handle correct answer in checkAnswer', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should handle incorrect answer', async () => {
+    const game = usePokemonGame()
 
-    await flushPromises()
-    await nextTick()
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    const correctId = result.randomPokemon.value.id
-    result.checkAnswer(correctId)
+    const incorrectId = 999 // ID that doesn't exist in options
+    game.checkAnswer(incorrectId)
 
-    expect(result.gameStatus.value).toBe(GameStatus.Won)
-
-    const confetti = await import('canvas-confetti')
-    expect(vi.mocked(confetti.default)).toHaveBeenCalledWith({
-      particleCount: 300,
-      spread: 150,
-      origin: { y: 0.6 },
-    })
+    expect(game.gameStatus.value).toBe(GameStatus.Lost)
+    expect(game.score.value).toBe(0)
+    expect(game.streak.value).toBe(0)
+    expect(game.correctAnswers.value).toBe(0)
+    expect(game.totalQuestions.value).toBe(1)
+    expect(game.accuracy.value).toBe(0)
+    expect(mockConfetti).not.toHaveBeenCalled()
   })
 
-  it('should handle incorrect answer in checkAnswer', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should reset game correctly', async () => {
+    const game = usePokemonGame()
 
-    await flushPromises()
-    await nextTick()
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    const incorrectId = result.randomPokemon.value.id + 999 // Ensure it's different
-    result.checkAnswer(incorrectId)
+    // Answer incorrectly to set game to lost state
+    game.checkAnswer(999)
+    expect(game.gameStatus.value).toBe(GameStatus.Lost)
 
-    expect(result.gameStatus.value).toBe(GameStatus.Lost)
+    // Reset game
+    game.getNextRound()
+    expect(game.gameStatus.value).toBe(GameStatus.Playing)
   })
 
-  it('should reset game status when getNextRound is called', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should handle multiple correct answers and streak', async () => {
+    const game = usePokemonGame()
 
-    await flushPromises()
-    await nextTick()
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    // First, lose the game
-    const incorrectId = result.randomPokemon.value.id + 999
-    result.checkAnswer(incorrectId)
-    expect(result.gameStatus.value).toBe(GameStatus.Lost)
+    // First correct answer
+    const correctId1 = game.randomPokemon.value.id
+    game.checkAnswer(correctId1)
+    expect(game.streak.value).toBe(1)
+    expect(game.score.value).toBe(10)
 
-    // Then start a new round
-    result.getNextRound()
-    expect(result.gameStatus.value).toBe(GameStatus.Playing)
+    // Start new round and answer correctly again
+    game.getNextRound()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const correctId2 = game.randomPokemon.value.id
+    game.checkAnswer(correctId2)
+
+    expect(game.streak.value).toBe(2)
+    expect(game.correctAnswers.value).toBe(2)
+    expect(game.totalQuestions.value).toBe(2)
+    expect(game.accuracy.value).toBe(100)
+    expect(game.score.value).toBeGreaterThan(20) // Should have streak bonus
   })
 
-  it('should handle different round sizes in getNextRound', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should reset streak on incorrect answer but keep best streak', async () => {
+    const game = usePokemonGame()
 
-    await flushPromises()
-    await nextTick()
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // Answer correctly first
+    const correctId = game.randomPokemon.value.id
+    game.checkAnswer(correctId)
+    expect(game.streak.value).toBe(1)
+    expect(game.bestStreak.value).toBe(1)
+
+    // Start new round and answer incorrectly
+    game.getNextRound()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    game.checkAnswer(999)
+
+    expect(game.streak.value).toBe(0)
+    expect(game.bestStreak.value).toBe(1) // Should remember best streak
+  })
+
+  it('should handle getNextRound with different sizes', async () => {
+    const game = usePokemonGame()
+
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
     // Test with 2 options
-    result.getNextRound(2)
-    expect(result.pokemonOptions.value).toHaveLength(2)
-
-    // Note: getNextRound modifies the pokemons array, so we need to test
-    // that it correctly handles the remaining elements
-    const remainingLength = result.pokemonOptions.value.length
-    expect(remainingLength).toBeGreaterThan(0)
-    expect(remainingLength).toBeLessThanOrEqual(2)
+    game.getNextRound(2)
+    expect(game.pokemonOptions.value).toHaveLength(2)
+    expect(game.randomPokemon.value).toBeDefined()
   })
 
-  it('should parse pokemon URLs correctly to extract IDs', async () => {
-    const [result] = withSetup(() => usePokemonGame())
+  it('should calculate level progression correctly', async () => {
+    const game = usePokemonGame()
 
-    await flushPromises()
-    await nextTick()
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    // Check that IDs are correctly extracted from URLs
-    expect(result.pokemonOptions.value.length).toBeGreaterThan(0)
+    expect(game.currentLevel.value).toBe(1)
+    expect(game.pointsToNextLevel.value).toBe(100)
+    expect(game.progressPercentage.value).toBe(0)
 
-    // Verify that all pokemon have valid IDs extracted from URLs
-    result.pokemonOptions.value.forEach((pokemon: Pokemon) => {
+    // After scoring some points, progress should update
+    game.checkAnswer(game.randomPokemon.value.id)
+    expect(game.progressPercentage.value).toBeGreaterThan(0)
+  })
+
+  it('should parse pokemon IDs from URLs correctly', async () => {
+    const game = usePokemonGame()
+
+    // Wait for initial load
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    game.pokemonOptions.value.forEach((pokemon) => {
       expect(pokemon.id).toBeTypeOf('number')
       expect(pokemon.id).toBeGreaterThan(0)
       expect(pokemon.name).toBeTypeOf('string')
       expect(pokemon.name.length).toBeGreaterThan(0)
     })
 
-    // Test with specific known pokemon from mock data
-    const charmander = result.pokemonOptions.value.find((p: Pokemon) => p.name === 'charmander')
-    if (charmander) {
-      expect(charmander.id).toBe(4)
-    }
-  })
+    // Check specific pokemon
+    const bulbasaur = game.pokemonOptions.value.find((p) => p.name === 'bulbasaur')
+    expect(bulbasaur?.id).toBe(1)
 
-  it('should maintain reactive state correctly', async () => {
-    const [result] = withSetup(() => usePokemonGame())
-
-    // Initial state
-    expect(result.gameStatus.value).toBe(GameStatus.Playing)
-    expect(result.isLoading.value).toBe(true)
-
-    // After loading
-    await flushPromises()
-    await nextTick()
-
-    expect(result.isLoading.value).toBe(false)
-    expect(result.pokemonOptions.value.length).toBeGreaterThan(0)
-    expect(result.randomPokemon.value).toBeDefined()
-  })
-
-  it('should have correct computed properties', async () => {
-    const [result] = withSetup(() => usePokemonGame())
-
-    // Initially loading should be true (no pokemons loaded)
-    expect(result.isLoading.value).toBe(true)
-
-    await flushPromises()
-    await nextTick()
-
-    // After loading, isLoading should be false and randomPokemon should be defined
-    expect(result.isLoading.value).toBe(false)
-    expect(result.randomPokemon.value).toBeDefined()
-    expect(result.pokemonOptions.value).toContain(result.randomPokemon.value)
-  })
-
-  it('should call pokemonApi.get with correct parameters', async () => {
-    withSetup(() => usePokemonGame())
-
-    await flushPromises()
-    await nextTick()
-
-    const { pokemonApi } = await import('@/modules/pokemon/api/pokemonApi')
-    expect(pokemonApi.get).toHaveBeenCalledWith('/?limit=151')
+    const charmander = game.pokemonOptions.value.find((p) => p.name === 'charmander')
+    expect(charmander?.id).toBe(4)
   })
 })
